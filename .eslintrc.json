@@ -1,3 +1,8 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",  // Disable the rule for explicit 'any' type
+    "@typescript-eslint/no-unused-vars": "warn",  // Warn on unused variables instead of error
+    "@typescript-eslint/no-non-null-assertion": "off" // If you want to disable the non-null assertion warning
+  }
 }

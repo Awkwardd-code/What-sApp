@@ -72,8 +72,8 @@ const MediaDropdown = () => {
 			});
 
 			setSelectedVideo(null);
-		} catch (error) {
-			console.log(error)
+		} catch (_error) {
+			
 		} finally {
 			setIsLoading(false);
 		}

@@ -1,0 +1,45 @@
+// src/types.ts
+
+import { Id } from "../../convex/_generated/dataModel"; 
+
+// ===================
+// User type
+// ===================
+export type User = {
+  _id: Id<"users">;
+  name?: string;
+  email: string;
+  image: string;
+  tokenIdentifier: string;
+  isOnline: boolean;
+};
+
+// ===================
+// Message type
+// ===================
+export type Message = {
+  _id: Id<"messages">;
+  conversation: Id<"conversations">;
+  sender: string | Id<"users">; // Allow both string and Id<"users">
+  content: string;
+  messageType: "text" | "image" | "video";
+  _creationTime: number;
+};
+// ===================
+// Conversation type
+// ===================
+export type Conversation = {
+  _id: Id<"conversations">;
+  participants: Id<"users">[];
+  isGroup: boolean;
+  groupName?: string;
+  groupImage?: string;
+  admin?: Id<"users">;
+  _creationTime: number;
+
+  // Extended fields for UI
+  name?: string; // fallback name when not a group
+  image?: string; // fallback image when not a group
+  lastMessage?: Message;
+  isOnline?: boolean; // for direct messages, convenience field
+};

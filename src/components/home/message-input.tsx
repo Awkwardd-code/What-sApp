@@ -15,16 +15,24 @@ const MessageInput = () => {
 	const { selectedConversation } = useConversationStore();
 	const { ref, isComponentVisible, setIsComponentVisible } = useComponentVisible(false);
 
-	const me = useQuery(api.users.getMe);
+	const me = useQuery(api.users.getMe); // Handle undefined gracefully
 	const sendTextMsg = useMutation(api.messages.sendTextMessage);
 
 	const handleSendTextMsg = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!selectedConversation || !me) {
+			toast.error("No selected conversation or user information available.");
+			return;
+		}
 		try {
-			await sendTextMsg({ content: msgText, conversation: selectedConversation!._id, sender: me!._id });
-			setMsgText("");
+			await sendTextMsg({
+				content: msgText,
+				conversation: selectedConversation._id,
+				sender: me._id,
+			});
+			setMsgText(""); // Clear message input after sending
 		} catch (err: any) {
-			toast.error(err.message);
+			toast.error("Error sending message: " + err.message);
 			console.error(err);
 		}
 	};
@@ -32,7 +40,7 @@ const MessageInput = () => {
 	return (
 		<div className='bg-gray-primary p-2 flex gap-4 items-center'>
 			<div className='relative flex gap-2 ml-2'>
-				{/* EMOJI PICKER WILL GO HERE */}
+				{/* EMOJI PICKER */}
 				<div ref={ref} onClick={() => setIsComponentVisible(true)}>
 					{isComponentVisible && (
 						<EmojiPicker
@@ -40,11 +48,17 @@ const MessageInput = () => {
 							onEmojiClick={(emojiObject) => {
 								setMsgText((prev) => prev + emojiObject.emoji);
 							}}
-							style={{ position: "absolute", bottom: "1.5rem", left: "1rem", zIndex: 50 }}
+							style={{
+								position: "absolute",
+								bottom: "1.5rem",
+								left: "1rem",
+								zIndex: 50,
+							}}
 						/>
 					)}
-					<Laugh className='text-gray-600 dark:text-gray-400' />
+					<Laugh className='text-gray-600 dark:text-gray-400 cursor-pointer' />
 				</div>
+				{/* Media Dropdown Component */}
 				<MediaDropdown />
 			</div>
 			<form onSubmit={handleSendTextMsg} className='w-full flex gap-3'>
@@ -58,6 +72,7 @@ const MessageInput = () => {
 					/>
 				</div>
 				<div className='mr-4 flex items-center gap-3'>
+					{/* Display either the Send button or Mic button */}
 					{msgText.length > 0 ? (
 						<Button
 							type='submit'
@@ -80,4 +95,5 @@ const MessageInput = () => {
 		</div>
 	);
 };
+
 export default MessageInput;
