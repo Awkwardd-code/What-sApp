@@ -15,7 +15,7 @@ export type Conversation = {
     _id: Id<"messages">;
     conversation: Id<"conversations">;
     content: string;
-    sender: Id<"users">; // Ensure this is Id<"users">
+    sender: Id<"users">; // Ensure sender is Id<"users">
   };
 };
 

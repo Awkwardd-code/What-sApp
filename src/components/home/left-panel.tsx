@@ -3,7 +3,6 @@
 import { ListFilter, Search } from "lucide-react";
 import { Input } from "../ui/input";
 import ThemeSwitch from "./theme-switch";
-
 import Conversation from "./conversation";
 import { UserButton } from "@clerk/nextjs";
 import UserListDialog from "./user-list-dialog";
@@ -12,22 +11,35 @@ import { useConversationStore } from "@/store/chat-store";
 import { api } from "../../../convex/_generated/api";
 import { useEffect } from "react";
 import LoaderUI from "./LoaderUI";
+import { Conversation as ConversationType } from "@/lib/types";
+import { Id } from "../../../convex/_generated/dataModel";  // Ensure this import is correct
 
 const LeftPanel = () => {
   const { isAuthenticated, isLoading } = useConvexAuth();
 
-  // Ensure conversations have proper type
+  // Fetch conversations using useQuery and handle the type transformation
   const conversations = useQuery(api.conversations.getMyConversations, isAuthenticated ? undefined : "skip");
 
   const { selectedConversation, setSelectedConversation } = useConversationStore();
 
+  // Ensure conversations are not null and type-safe
   useEffect(() => {
-    // Ensure conversations are not null and type-safe
     const conversationIds = conversations?.map((conversation) => conversation._id);
     if (selectedConversation && conversationIds && !conversationIds.includes(selectedConversation._id)) {
       setSelectedConversation(null);
     }
   }, [conversations, selectedConversation, setSelectedConversation]);
+
+  // Transform conversations to ensure lastMessage.sender is treated as Id<"users">
+  const transformedConversations: ConversationType[] = conversations?.map((conversation) => ({
+    ...conversation,
+    lastMessage: conversation.lastMessage
+      ? {
+          ...conversation.lastMessage,
+          sender: conversation.lastMessage.sender as Id<"users">, // Ensure sender is of type Id<"users">
+        }
+      : undefined,
+  })) || [];
 
   if (isLoading) {
     // Optional: show a spinner or loading message
@@ -71,11 +83,11 @@ const LeftPanel = () => {
       {/* Chat List */}
       <div className="my-3 flex flex-col gap-0 max-h-[80%] overflow-auto">
         {/* Conversations will go here */}
-        {conversations?.map((conversation) => (
+        {transformedConversations.map((conversation) => (
           <Conversation key={conversation._id} conversation={conversation} />
         ))}
 
-        {conversations?.length === 0 && (
+        {transformedConversations.length === 0 && (
           <>
             <p className="text-center text-gray-500 text-sm mt-3">No conversations yet</p>
             <p className="text-center text-gray-500 text-sm mt-3">
