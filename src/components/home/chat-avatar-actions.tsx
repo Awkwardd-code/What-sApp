@@ -1,13 +1,20 @@
+import React from "react";
 import { IMessage, useConversationStore } from "@/store/chat-store";
 import { useMutation } from "convex/react";
 import { Ban, LogOut } from "lucide-react";
 import toast from "react-hot-toast";
 import { api } from "../../../convex/_generated/api";
-import React from "react";
+import type { Id } from "../../../convex/_generated/dataModel";
+
+type User = {
+	_id: Id<"users">;
+	isOnline?: boolean;
+	image?: string;
+};
 
 type ChatAvatarActionsProps = {
 	message: IMessage;
-	me: any;
+	me: User;
 };
 
 const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
@@ -23,17 +30,20 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 		if (fromAI) return;
 		e.stopPropagation();
 		if (!selectedConversation) return;
+
 		try {
 			await kickUser({
 				conversationId: selectedConversation._id,
-				userId: message.sender._id,
+				userId: message.sender._id as Id<"users">,
 			});
 
 			setSelectedConversation({
 				...selectedConversation,
-				participants: selectedConversation.participants.filter((id) => id !== message.sender._id),
+				participants: selectedConversation.participants.filter(
+					(id) => id !== message.sender._id
+				),
 			});
-		} catch (error) {
+		} catch {
 			toast.error("Failed to kick user");
 		}
 	};
@@ -44,18 +54,18 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 		try {
 			const conversationId = await createConversation({
 				isGroup: false,
-				participants: [me._id, message.sender._id],
+				participants: [me._id, message.sender._id as Id<"users">],
 			});
 
 			setSelectedConversation({
 				_id: conversationId,
 				name: message.sender.name,
-				participants: [me._id, message.sender._id],
+				participants: [me._id, message.sender._id as Id<"users">],
 				isGroup: false,
 				isOnline: message.sender.isOnline,
 				image: message.sender.image,
 			});
-		} catch (error) {
+		} catch {
 			toast.error("Failed to create conversation");
 		}
 	};
@@ -69,9 +79,14 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 
 			{!isMember && !fromAI && isGroup && <Ban size={16} className='text-red-500' />}
 			{isGroup && isMember && selectedConversation?.admin === me._id && (
-				<LogOut size={16} className='text-red-500 opacity-0 group-hover:opacity-100' onClick={handleKickUser} />
+				<LogOut
+					size={16}
+					className='text-red-500 opacity-0 group-hover:opacity-100'
+					onClick={handleKickUser}
+				/>
 			)}
 		</div>
 	);
 };
+
 export default ChatAvatarActions;

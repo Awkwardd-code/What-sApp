@@ -8,10 +8,17 @@ import { Dialog, DialogContent, DialogDescription } from "../ui/dialog";
 import ReactPlayer from "react-player";
 import ChatAvatarActions from "./chat-avatar-actions";
 import { Bot } from "lucide-react";
+import type { Id } from "../../../convex/_generated/dataModel";
+
+type User = {
+	_id: Id<"users">;
+	isOnline?: boolean;
+	image?: string;
+};
 
 type ChatBubbleProps = {
 	message: IMessage;
-	me: any;
+	me: User;
 	previousMessage?: IMessage;
 };
 
@@ -22,13 +29,16 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 	const time = `${hour}:${minute}`;
 
 	const { selectedConversation } = useConversationStore();
-	const isMember = selectedConversation?.participants.includes(message.sender?._id) || false;
+	const isMember = selectedConversation?.participants.includes(message.sender?._id as Id<"users">) || false;
 	const isGroup = selectedConversation?.isGroup;
 	const fromMe = message.sender?._id === me._id;
 	const fromAI = message.sender?.name === "ChatGPT";
-	const bgClass = fromMe ? "bg-green-chat" : !fromAI ? "bg-white dark:bg-gray-primary" : "bg-blue-500 text-white";
+	const bgClass = fromMe
+		? "bg-green-chat"
+		: !fromAI
+		? "bg-white dark:bg-gray-primary"
+		: "bg-blue-500 text-white";
 
-	console.log(message.sender);
 	const [open, setOpen] = useState(false);
 
 	const renderMessageContent = () => {
@@ -50,10 +60,12 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 				<DateIndicator message={message} previousMessage={previousMessage} />
 				<div className='flex gap-1 w-2/3 p-2'>
 					<ChatBubbleAvatar isGroup={isGroup} isMember={isMember} message={message} fromAI={fromAI} />
-					<div className={`flex flex-col z-20 max-w-fit px-2 pt-1 rounded-md shadow-md relative ${bgClass}`}>
+					<div
+						className={`flex flex-col z-20 max-w-fit px-2 pt-1 rounded-md shadow-md relative ${bgClass}`}
+					>
 						{!fromAI && <OtherMessageIndicator />}
 						{fromAI && <Bot size={16} className='absolute bottom-[2px] left-2' />}
-						{<ChatAvatarActions message={message} me={me} />}
+						<ChatAvatarActions message={message} me={me} />
 						{renderMessageContent()}
 						{open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)} />}
 						<MessageTime time={time} fromMe={fromMe} />
@@ -66,9 +78,10 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 	return (
 		<>
 			<DateIndicator message={message} previousMessage={previousMessage} />
-
 			<div className='flex gap-1 w-2/3 ml-auto'>
-				<div className={`flex  z-20 max-w-fit px-2 pt-1 pb-1 rounded-md shadow-md ml-auto relative ${bgClass}`}>
+				<div
+					className={`flex z-20 max-w-fit px-2 pt-1 pb-1 rounded-md shadow-md ml-auto relative ${bgClass}`}
+				>
 					<SelfMessageIndicator />
 					{renderMessageContent()}
 					{open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)} />}
@@ -78,50 +91,61 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 		</>
 	);
 };
+
 export default ChatBubble;
 
-const VideoMessage = ({ message }: { message: IMessage }) => {
-	return <ReactPlayer url={message.content} width='250px' height='250px' controls={true} light={true} />;
-};
+// === Subcomponents ===
 
-const ImageMessage = ({ message, handleClick }: { message: IMessage; handleClick: () => void }) => {
-	return (
-		<div className='w-[250px] h-[250px] m-2 relative'>
-			<Image
-				src={message.content}
-				fill
-				className='cursor-pointer object-cover rounded'
-				alt='image'
-				onClick={handleClick}
-			/>
-		</div>
-	);
-};
+const VideoMessage = ({ message }: { message: IMessage }) => (
+	<ReactPlayer url={message.content} width='250px' height='250px' controls light />
+);
 
-const ImageDialog = ({ src, onClose, open }: { open: boolean; src: string; onClose: () => void }) => {
-	return (
-		<Dialog
-			open={open}
-			onOpenChange={(isOpen) => {
-				if (!isOpen) onClose();
-			}}
-		>
-			<DialogContent className='min-w-[750px]'>
-				<DialogDescription className='relative h-[450px] flex justify-center'>
-					<Image src={src} fill className='rounded-lg object-contain' alt='image' />
-				</DialogDescription>
-			</DialogContent>
-		</Dialog>
-	);
-};
+const ImageMessage = ({
+	message,
+	handleClick,
+}: {
+	message: IMessage;
+	handleClick: () => void;
+}) => (
+	<div className='w-[250px] h-[250px] m-2 relative'>
+		<Image
+			src={message.content}
+			fill
+			className='cursor-pointer object-cover rounded'
+			alt='image'
+			onClick={handleClick}
+		/>
+	</div>
+);
 
-const MessageTime = ({ time, fromMe }: { time: string; fromMe: boolean }) => {
-	return (
-		<p className='text-[10px] mt-2 self-end flex gap-1 items-center'>
-			{time} {fromMe && <MessageSeenSvg />}
-		</p>
-	);
-};
+const ImageDialog = ({
+	src,
+	open,
+	onClose,
+}: {
+	open: boolean;
+	src: string;
+	onClose: () => void;
+}) => (
+	<Dialog
+		open={open}
+		onOpenChange={(isOpen) => {
+			if (!isOpen) onClose();
+		}}
+	>
+		<DialogContent className='min-w-[750px]'>
+			<DialogDescription className='relative h-[450px] flex justify-center'>
+				<Image src={src} fill className='rounded-lg object-contain' alt='image' />
+			</DialogDescription>
+		</DialogContent>
+	</Dialog>
+);
+
+const MessageTime = ({ time, fromMe }: { time: string; fromMe: boolean }) => (
+	<p className='text-[10px] mt-2 self-end flex gap-1 items-center'>
+		{time} {fromMe && <MessageSeenSvg />}
+	</p>
+);
 
 const OtherMessageIndicator = () => (
 	<div className='absolute bg-white dark:bg-gray-primary top-0 -left-[4px] w-3 h-3 rounded-bl-full' />
@@ -132,7 +156,7 @@ const SelfMessageIndicator = () => (
 );
 
 const TextMessage = ({ message }: { message: IMessage }) => {
-	const isLink = /^(ftp|http|https):\/\/[^ "]+$/.test(message.content); // Check if the content is a URL
+	const isLink = /^(ftp|http|https):\/\/[^ "]+$/.test(message.content);
 
 	return (
 		<div>
@@ -141,12 +165,12 @@ const TextMessage = ({ message }: { message: IMessage }) => {
 					href={message.content}
 					target='_blank'
 					rel='noopener noreferrer'
-					className={`mr-2 text-sm font-light text-blue-400 underline`}
+					className='mr-2 text-sm font-light text-blue-400 underline'
 				>
 					{message.content}
 				</a>
 			) : (
-				<p className={`mr-2 text-sm font-light`}>{message.content}</p>
+				<p className='mr-2 text-sm font-light'>{message.content}</p>
 			)}
 		</div>
 	);
